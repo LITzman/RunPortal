@@ -8,5 +8,6 @@ export const customDarkTheme: Theme = {
     colorSubtleBackground: webDarkTheme.colorSubtleBackgroundHover,
     colorSubtleBackgroundHover: webDarkTheme.colorNeutralForegroundInverted,
     colorNeutralForeground2: webDarkTheme.colorNeutralForeground2Hover,
-    colorNeutralForeground2Hover: webDarkTheme.colorNeutralForeground2
+    colorNeutralForeground2Hover: webDarkTheme.colorNeutralForeground2,
+    colorNeutralBackground1: webDarkTheme.colorSubtleBackground
 };

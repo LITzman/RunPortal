@@ -4,8 +4,6 @@ const path = require('path')
 const url = require('url')
 const linksData = require('../src/links')
 
-
-
 let mainWindow = null
 let windowShown = false
 function clientInit() {
@@ -84,7 +82,7 @@ function clientInit() {
   
     // Scale window to the number of buttons.
     const mainWindowWidth = (linksData.links.length * 100) + 250
-    const mainWindowHeight = 200
+    const mainWindowHeight = 240
 
     mainWindow = new BrowserWindow({
 
@@ -94,18 +92,25 @@ function clientInit() {
         x: screenWidth / 2 - mainWindowWidth / 2,
         y: screenHeight / 2 - mainWindowHeight / 2 - (mainWindowHeight / 2),
         resizable: false,
-        minimizable: false,  
+        minimizable: false,
+        maximizable: false,
+        movable: false,
+        closable: false,
 
         // For react->electron IPC
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
 
-        // Fluent style window with round corners
-        titleBarStyle: 'hidden',
+        // Window styling
+        titleBarStyle: 'default',
+        title: '',
         autoHideMenuBar: true,
-        backgroundColor: '#292929',
-        show: false
+        transparent: true,
+        frameless: false,
+        backgroundMaterial: 'mica',
+        //backgroundColor: '#292929',
+        show: false // CHANGE
     })
 
     mainWindow.loadURL(startUrl)

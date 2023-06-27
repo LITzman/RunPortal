@@ -44,13 +44,13 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ link
     }
     
     return (
-        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20   ', textAlign: 'center'}}>
+        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px', textAlign: 'center'}}>
             {links.map((link, index) => (
             <div>
                 <div style={{marginRight: '20px', marginTop: '3px'}}>
                     <LinkButton shortcutText={link.shortcutText} appName={link.appName} linkPath={link.linkPath}/>
                 </div>
-                <div style={{marginRight: '20px', marginTop: '15px'}}>
+                <div style={{marginRight: '20px', marginTop: '10px'}}>
                     <Body2>{link.appName}</Body2>   
                 </div>
             </div>

@@ -1,5 +1,5 @@
 {
-  "name": "electrun",
+  "name": "RunPortal",
   "version": "0.1.0",
   "private": true,
   "main": "public/client.ts",
@@ -13,6 +13,7 @@
     "@types/node": "^16.18.36",
     "@types/react": "^18.2.12",
     "@types/react-dom": "^18.2.5",
+    "electron-json-storage": "^4.6.0",
     "ffi-napi": "^4.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

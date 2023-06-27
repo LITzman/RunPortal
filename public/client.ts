@@ -2,7 +2,12 @@ const { app, BrowserWindow, globalShortcut, shell, Menu, Tray } = require('elect
 const { ipcMain } = require('electron/main');
 const path = require('path')
 const url = require('url')
-const linksData = require('../src/links')
+const storage = require('electron-json-storage')
+
+// Local links settings
+const userSettingsPath = path.join(app.getPath('userData'), 'linksSettings')
+storage.setDataPath(userSettingsPath)
+const linksData = storage.getSync('links')
 
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state

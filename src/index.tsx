@@ -1,4 +1,4 @@
-import { FluentProvider, Skeleton, SkeletonItem} from '@fluentui/react-components'
+import { FluentProvider } from '@fluentui/react-components'
 import ReactDOM from 'react-dom/client'
 import { LinkButtonContainer, BottomBar } from './ui'
 import { customDarkTheme } from './theme'

@@ -2,7 +2,7 @@
   "name": "electrun",
   "version": "0.1.0",
   "private": true,
-  "main": "electron/client.ts",
+  "main": "public/client.ts",
   "homepage": "./",
   "dependencies": {
     "@fluentui/react-components": "^9.21.0",

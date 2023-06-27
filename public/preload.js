@@ -5,4 +5,5 @@ window.ipcRenderer = require('electron').ipcRenderer
 contextBridge.exposeInMainWorld('ipcRenderer', {
     // Called within react
     send: (channel, data) => ipcRenderer.send(channel, data),
+    invoke: (channel) => ipcRenderer.invoke('get-links')
 });

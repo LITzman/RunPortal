@@ -4,8 +4,6 @@ const path = require('path')
 const url = require('url')
 const linksData = require('../src/links')
 
-let instanceHolder = null
-
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state
     constructor(options) {
@@ -64,6 +62,11 @@ class clientWindow extends BrowserWindow {
 
 function clientInit() {
 
+    // Give the UI the links list when it wants it
+    ipcMain.handle('get-links', function (event, ...args) {
+        return linksData
+    })
+    
      // FIXME - make something that will work packaged
     const startUrl = process.env.ELECTRON_START_URL
     

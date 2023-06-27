@@ -1,6 +1,9 @@
 import React from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem } from '@fluentui/react-components'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider } from '@fluentui/react-components'
+import { customDarkTheme } from './theme'
 
+const ipcRenderer = (window as any).ipcRenderer
+const linksData = await ipcRenderer.invoke('get-links')
 
 interface LinkButtonContainerProps {
     links: {
@@ -19,8 +22,6 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ link
     }
     
     const LinkButton: React.FC<LinkButtonProps> = function ({ shortcutText, appName, linkPath }) {    
-
-        const ipcRenderer = (window as any).ipcRenderer
 
         // To open the links on button press
         const clickHandler = function() {
@@ -69,7 +70,16 @@ const BottomBar: React.FC = function () {
     )
 }
 
+const App: React.FC = function () {
+    return (
+        <FluentProvider theme={customDarkTheme}>
+            <LinkButtonContainer links={linksData.links} />
+            <BottomBar/>
+        </FluentProvider>
+    )
+
+}
+
 export {
-    LinkButtonContainer,
-    BottomBar
+    App
 }

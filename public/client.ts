@@ -4,73 +4,66 @@ const path = require('path')
 const url = require('url')
 const linksData = require('../src/links')
 
-let mainWindow = null
-let windowShown = false
-function clientInit() {
+let instanceHolder = null
 
-    // Functions to control window state
-    function hideWindow() {
-
-        if (windowShown) {
+class clientWindow extends BrowserWindow {
+    // Wrapper class to manage window state
+    constructor(options) {
+        super(options)
+        this.windowShown = false
+    }
+    hideWindow() {
+        if (this.windowShown) {
             // Unregister the open window shortcuts
             globalShortcut.unregisterAll()
 
             // Register the WINKEY + F combo to open the window
-            globalShortcut.register('CommandOrControl+Alt+F', function () {
-                showWindow()
-            })
+            var openCallback = (function () {
+                this.showWindow()
+            }).bind(this)
+            globalShortcut.register('CommandOrControl+Alt+F', openCallback)
 
-            mainWindow.hide()
-            windowShown = false
+            this.hide()
+            this.windowShown = false
         }
     }
-    function showWindow() {
-        if (!windowShown) {
+    showWindow() {
+        var self = this
+        if (!this.windowShown) {
             // Unregister the close window shortcuts
             globalShortcut.unregisterAll()
 
             // Register link shortcuts
             linksData.links.forEach(function (link) {
-                globalShortcut.register(link.shortcutText, function () {
-                    if (windowShown && mainWindow.isFocused()) {
-                        executeLink(link.linkPath)
+
+                var openLinkCallback = (function() {
+                    if (this.windowShown && this.isFocused()) {
+                        this.executeLink(link.linkPath)
                     }
-                    return
-                })
-    
-                globalShortcut.register('esc', function () {
-                    hideWindow()
-                    return 
-                })
-            
+                }).bind(this)
+                globalShortcut.register(link.shortcutText, openLinkCallback)
             })
-    
-            mainWindow.show()
-            windowShown = true
+            
+            // Register escape callback
+            var escapeCallback = (function() {
+                this.hideWindow()
+            }).bind(this)
+            globalShortcut.register('esc', escapeCallback)
+
+            this.show()
+            this.windowShown = true
         }
     }
 
     // Idealy this is shell32.dll->ShellExecuteEx but this works
-    function executeLink(link) {
+    executeLink(link) {
         shell.openPath(link)
-        hideWindow()
+        this.hideWindow()
     }
+}
 
-    // Tray icon!
-    tray = new Tray(path.join(__dirname, 'ic_fluent_balloon_24_filled.png'))
-    tray.on('click', function () {
-        if (mainWindow) {
-            showWindow()
-        }
-    })
-    tray.setToolTip('Run')
-    tray.setContextMenu(Menu.buildFromTemplate([
-        {
-            label: 'Show',
-            click : showWindow
-        }
-    ]))
-    
+function clientInit() {
+
      // FIXME - make something that will work packaged
     const startUrl = process.env.ELECTRON_START_URL
     
@@ -84,7 +77,7 @@ function clientInit() {
     const mainWindowWidth = (linksData.links.length * 100) + 250
     const mainWindowHeight = 240
 
-    mainWindow = new BrowserWindow({
+    let mainWindow = new clientWindow({
 
         // Create the window in the center of the screen
         width: mainWindowWidth,
@@ -109,38 +102,51 @@ function clientInit() {
         transparent: true,
         frameless: false,
         backgroundMaterial: 'mica',
-        //backgroundColor: '#292929',
         show: false // CHANGE
     })
-
-    mainWindow.loadURL(startUrl)
+    
+    // Tray icon!
+    var tray = new Tray(path.join(__dirname, 'ic_fluent_balloon_24_filled.png'))
+    tray.on('click', function () {
+        if (mainWindow) {
+            mainWindow.showWindow()
+        }
+    })
+    tray.setToolTip('Run')
+    tray.setContextMenu(Menu.buildFromTemplate([
+        {
+            label: 'Show',
+            click : mainWindow.showWindow
+        }
+    ]))
     
     // UI buttons can also be used to open the links
     ipcMain.on('button-press', function (event, link) {
-        executeLink(link)
+        mainWindow.executeLink(link)
     })
 
     globalShortcut.register('esc', function () {
-        hideWindow()
+        mainWindow.hideWindow()
     })
 
     mainWindow.on('blur', function () {
-        hideWindow()
+        mainWindow.hideWindow()
     })
 
     mainWindow.on('minimize', function () {
-        hideWindow()
+        mainWindow.hideWindow()
     })
     
     app.on('window-all-closed', function () {   
-        hideWindow()
+        mainWindow.hideWindow()
     })
+
+    mainWindow.loadURL(startUrl)
 }
 
-let tray = null
 app.whenReady().then(clientInit)
 app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (app.getAllWindows().length === 0) {
         clientInit()
     }
 })

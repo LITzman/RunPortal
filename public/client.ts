@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, shell, Menu, Tray } = require('electron')
+const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeImage } = require('electron')
 const { ipcMain } = require('electron/main');
 const path = require('path')
 const url = require('url')
@@ -8,6 +8,14 @@ const storage = require('electron-json-storage')
 const userSettingsPath = path.join(app.getPath('userData'), 'linksSettings')
 storage.setDataPath(userSettingsPath)
 const linksData = storage.getSync('links')
+
+// Give the UI the links list when it wants it
+ipcMain.handle('get-links', function (event, ...args) {
+    return linksData
+})
+
+const iconPath = path.join(__dirname, 'icon.png')
+const clearIconPath = path.join(__dirname, 'clear_icon.png')
 
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state
@@ -31,7 +39,6 @@ class clientWindow extends BrowserWindow {
         }
     }
     showWindow() {
-        var self = this
         if (!this.windowShown) {
             // Unregister the close window shortcuts
             globalShortcut.unregisterAll()
@@ -66,11 +73,6 @@ class clientWindow extends BrowserWindow {
 }
 
 function clientInit() {
-
-    // Give the UI the links list when it wants it
-    ipcMain.handle('get-links', function (event, ...args) {
-        return linksData
-    })
     
      // FIXME - make something that will work packaged
     const startUrl = process.env.ELECTRON_START_URL
@@ -104,37 +106,34 @@ function clientInit() {
         },
 
         // Window styling
+        icon: clearIconPath,
+        skipTaskbar: false,
         titleBarStyle: 'default',
         title: '',
         autoHideMenuBar: true,
         transparent: true,
         frameless: false,
         backgroundMaterial: 'mica',
-        show: false // CHANGE
+        show: false
     })
     
     // Tray icon!
-    var tray = new Tray(path.join(__dirname, 'ic_fluent_balloon_24_filled.png'))
+    var tray = new Tray(iconPath)
     tray.on('click', function () {
         if (mainWindow) {
             mainWindow.showWindow()
         }
     })
-    tray.setToolTip('Run')
-    tray.setContextMenu(Menu.buildFromTemplate([
-        {
-            label: 'Show',
-            click : mainWindow.showWindow
-        }
-    ]))
+    tray.setToolTip(app.getName())
     
     // UI buttons can also be used to open the links
-    ipcMain.on('button-press', function (event, link) {
+    ipcMain.on('button-press', function (_, link) {
         mainWindow.executeLink(link)
     })
 
-    globalShortcut.register('esc', function () {
-        mainWindow.hideWindow()
+    // Don't show the ugly context menu
+    mainWindow.on('system-context-menu', function (event, _) {
+        event.preventDefault()
     })
 
     mainWindow.on('blur', function () {

@@ -1,6 +1,6 @@
-import React from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider } from '@fluentui/react-components'
-import { customDarkTheme } from './theme'
+import React, { useEffect, useState } from 'react'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, Theme } from '@fluentui/react-components'
+import { customDarkTheme, customLightTheme } from './theme'
 
 const ipcRenderer = (window as any).ipcRenderer
 const linksData = await ipcRenderer.invoke('get-links')
@@ -13,7 +13,7 @@ interface LinkButtonContainerProps {
     }[]
 }
 
-const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ links }) {
+const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
 
     interface LinkButtonProps {
         shortcutText: string,
@@ -21,10 +21,10 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ link
         linkPath: string
     }
     
-    const LinkButton: React.FC<LinkButtonProps> = function ({ shortcutText, appName, linkPath }) {    
+    const LinkButton: React.FC<LinkButtonProps> = ({ shortcutText, appName, linkPath }) => {    
 
         // To open the links on button press
-        const clickHandler = function() {
+        const clickHandler = () => {
             ipcRenderer.send("button-press", linkPath)
         }
         return (
@@ -47,7 +47,7 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ link
     return (
         <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px', textAlign: 'center'}}>
             {links.map((link, index) => (
-            <div>
+            <div key={link.appName}>
                 <div style={{marginRight: '20px', marginTop: '3px'}}>
                     <LinkButton shortcutText={link.shortcutText} appName={link.appName} linkPath={link.linkPath}/>
                 </div>
@@ -62,7 +62,7 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = function ({ link
 }
 
 // Just something nice to liven up the window
-const BottomBar: React.FC = function () {
+const BottomBar: React.FC = () => {
     return (
         <Skeleton appearance='opaque' style={{marginBottom: '10', marginLeft: '10', marginRight: '10'}}>
             <SkeletonItem />
@@ -70,16 +70,28 @@ const BottomBar: React.FC = function () {
     )
 }
 
-const App: React.FC = function () {
+const useThemeChange = () => {
+    const mediaQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
+
+    const [isDarkTheme, setDarkTheme] = useState(mediaQuery().matches)
+
+    useEffect(() => {
+        const mediaQueryResult = mediaQuery()
+        mediaQueryResult.addEventListener("change", (event) => {
+            setDarkTheme(event.matches)
+        })
+    }, [])
+
+    return isDarkTheme
+}
+
+export const App: React.FC = () => {
+
+   const isDarkTheme = useThemeChange()
     return (
-        <FluentProvider theme={customDarkTheme}>
+        <FluentProvider theme={isDarkTheme ? customDarkTheme : customLightTheme}>
             <LinkButtonContainer links={linksData.links} />
             <BottomBar/>
         </FluentProvider>
     )
-
-}
-
-export {
-    App
 }

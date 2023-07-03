@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeImage } = require('electron')
+const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme } = require('electron')
 const { ipcMain } = require('electron/main');
 const path = require('path')
 const url = require('url')
@@ -10,11 +10,14 @@ storage.setDataPath(userSettingsPath)
 const linksData = storage.getSync('links')
 
 // Give the UI the links list when it wants it
-ipcMain.handle('get-links', function (event, ...args) {
+ipcMain.handle('get-links', (event, ...args) => {
     return linksData
 })
 
-const iconPath = path.join(__dirname, 'icon.png')
+function getIcon() {
+    let icon = nativeTheme.shouldUseDarkColors ? 'dark_icon.png' : 'light_icon.png'
+    return path.join(__dirname, icon)
+}
 const clearIconPath = path.join(__dirname, 'clear_icon.png')
 
 class clientWindow extends BrowserWindow {
@@ -29,7 +32,7 @@ class clientWindow extends BrowserWindow {
             globalShortcut.unregisterAll()
 
             // Register the WINKEY + F combo to open the window
-            var openCallback = (function () {
+            var openCallback = (() => {
                 this.showWindow()
             }).bind(this)
             globalShortcut.register('CommandOrControl+Alt+F', openCallback)
@@ -44,9 +47,9 @@ class clientWindow extends BrowserWindow {
             globalShortcut.unregisterAll()
 
             // Register link shortcuts
-            linksData.links.forEach(function (link) {
+            linksData.links.forEach((link) => {
 
-                var openLinkCallback = (function() {
+                var openLinkCallback = (() => {
                     if (this.windowShown && this.isFocused()) {
                         this.executeLink(link.linkPath)
                     }
@@ -55,7 +58,7 @@ class clientWindow extends BrowserWindow {
             })
             
             // Register escape callback
-            var escapeCallback = (function() {
+            var escapeCallback = (() => {
                 this.hideWindow()
             }).bind(this)
             globalShortcut.register('esc', escapeCallback)
@@ -107,7 +110,7 @@ function clientInit() {
 
         // Window styling
         icon: clearIconPath,
-        skipTaskbar: false,
+        skipTaskbar: true,
         titleBarStyle: 'default',
         title: '',
         autoHideMenuBar: true,
@@ -118,8 +121,8 @@ function clientInit() {
     })
     
     // Tray icon!
-    var tray = new Tray(iconPath)
-    tray.on('click', function () {
+    var tray = new Tray(getIcon())
+    tray.on('click', () => {
         if (mainWindow) {
             mainWindow.showWindow()
         }
@@ -127,24 +130,24 @@ function clientInit() {
     tray.setToolTip(app.getName())
     
     // UI buttons can also be used to open the links
-    ipcMain.on('button-press', function (_, link) {
+    ipcMain.on('button-press', (_, link) => {
         mainWindow.executeLink(link)
     })
 
     // Don't show the ugly context menu
-    mainWindow.on('system-context-menu', function (event, _) {
+    mainWindow.on('system-context-menu', (event, _) => {
         event.preventDefault()
     })
 
-    mainWindow.on('blur', function () {
+    mainWindow.on('blur', () => {
         mainWindow.hideWindow()
     })
 
-    mainWindow.on('minimize', function () {
+    mainWindow.on('minimize', () => {
         mainWindow.hideWindow()
     })
     
-    app.on('window-all-closed', function () {   
+    app.on('window-all-closed', () => {   
         mainWindow.hideWindow()
     })
 
@@ -152,7 +155,7 @@ function clientInit() {
 }
 
 app.whenReady().then(clientInit)
-app.on('activate', function () {
+app.on('activate', () => {
     if (app.getAllWindows().length === 0) {
         clientInit()
     }

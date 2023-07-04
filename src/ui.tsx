@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, Theme } from '@fluentui/react-components'
-import { customDarkTheme, customLightTheme } from './theme'
+import React from 'react'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider } from '@fluentui/react-components'
+import { customDarkTheme, customLightTheme, useThemeChange } from './theme'
 
 const ipcRenderer = (window as any).ipcRenderer
 const linksData = await ipcRenderer.invoke('get-links')
@@ -68,21 +68,6 @@ const BottomBar: React.FC = () => {
             <SkeletonItem />
         </Skeleton>
     )
-}
-
-const useThemeChange = () => {
-    const mediaQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
-
-    const [isDarkTheme, setDarkTheme] = useState(mediaQuery().matches)
-
-    useEffect(() => {
-        const mediaQueryResult = mediaQuery()
-        mediaQueryResult.addEventListener("change", (event) => {
-            setDarkTheme(event.matches)
-        })
-    }, [])
-
-    return isDarkTheme
 }
 
 export const App: React.FC = () => {

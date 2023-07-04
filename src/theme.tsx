@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Theme, webDarkTheme, webLightTheme } from '@fluentui/react-components'
 
 // A customized theme with my own personal color preferences.
@@ -19,8 +20,24 @@ const customLightTheme: Theme = {
     colorNeutralBackground1: webLightTheme.colorSubtleBackground,
     colorTransparentBackground: webLightTheme.colorTransparentBackground
 }
-let i = 4
+
+const useThemeChange = () => {
+    const mediaQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
+
+    const [isDarkTheme, setDarkTheme] = useState(mediaQuery().matches)
+
+    useEffect(() => {
+        const mediaQueryResult = mediaQuery()
+        mediaQueryResult.addEventListener("change", (event) => {
+            setDarkTheme(event.matches)
+        })
+    }, [])
+
+    return isDarkTheme
+}
+
 export {
     customDarkTheme,
-    customLightTheme
+    customLightTheme,
+    useThemeChange
 }

@@ -17,13 +17,14 @@
     "ffi-napi": "^4.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1",
     "react-scripts": "5.0.1",
     "shelljs": "^0.8.5",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
-  },
+  },    
   "scripts": {
-    "start-electron": "set ELECTRON_START_URL=http://localhost:3000 && electron .",
+    "start-electron": "set ELECTRON_START_URL=http://localhost:3000/ && electron .",
     "package": "electron-builder build --win -c.extraMetadata.main=build/client.js --publish never",
     "publish": "electron-builder build --win --publish always",
     "start": "react-scripts start",

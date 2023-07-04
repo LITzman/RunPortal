@@ -3,11 +3,11 @@ const { ipcMain } = require('electron/main');
 const path = require('path')
 const url = require('url')
 const storage = require('electron-json-storage')
+const linksStorage = require('./links')
 
 // Local links settings
-const userSettingsPath = path.join(app.getPath('userData'), 'linksSettings')
-storage.setDataPath(userSettingsPath)
-const linksData = storage.getSync('links')
+const linksStorageClient = new linksStorage()
+const linksData = linksStorageClient.getLinks()
 
 // Give the UI the links list when it wants it
 ipcMain.handle('get-links', (event, ...args) => {
@@ -18,7 +18,7 @@ function getIcon() {
     let icon = nativeTheme.shouldUseDarkColors ? 'dark_icon.png' : 'light_icon.png'
     return path.join(__dirname, icon)
 }
-const clearIconPath = path.join(__dirname, 'clear_icon.png')
+const clearIcon = path.join(__dirname, 'clear_icon.png')
 
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state
@@ -75,6 +75,38 @@ class clientWindow extends BrowserWindow {
     }
 }
 
+function addLinkDialog() {
+    let addLinkWindow = new BrowserWindow({
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        movable: true,
+        closable: true,
+        // For react->electron IPC
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+        },
+
+        // Window styling
+        skipTaskbar: true,
+        titleBarStyle: 'default',
+        title: 'Add Shortcut',
+        autoHideMenuBar: true,
+        transparent: true,
+        frameless: false,
+        backgroundMaterial: 'mica',
+        show: false
+    })
+
+    addLinkWindow.once('ready-to-show', () => {
+        addLinkWindow.show()
+    })
+}
+
+function removeLinkDialog() {
+
+}
+
 function clientInit() {
     
      // FIXME - make something that will work packaged
@@ -109,7 +141,7 @@ function clientInit() {
         },
 
         // Window styling
-        icon: clearIconPath,
+        icon: clearIcon,
         skipTaskbar: true,
         titleBarStyle: 'default',
         title: '',
@@ -128,6 +160,16 @@ function clientInit() {
         }
     })
     tray.setToolTip(app.getName())
+
+    // Tray Menu!
+    const contextMenu = Menu.buildFromTemplate([
+        {label: 'Show RunPortal', click: () => { mainWindow.showWindow() }},
+        {label: 'Add Shortcut', click: addLinkDialog},
+        {label: 'Remove Shortcut', click: removeLinkDialog},
+        {label: 'Terminate RunPortal', click: () => { app.exit(1) }},
+        
+    ])
+    tray.setContextMenu(contextMenu)
     
     // UI buttons can also be used to open the links
     ipcMain.on('button-press', (_, link) => {

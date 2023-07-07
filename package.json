@@ -2,7 +2,7 @@
   "name": "RunPortal",
   "version": "0.1.0",
   "private": true,
-  "main": "public/client.ts",
+  "main": "public/client.js",
   "homepage": "./",
   "dependencies": {
     "@fluentui/react-components": "^9.21.0",
@@ -22,16 +22,15 @@
     "shelljs": "^0.8.5",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
-  },    
+  },
   "scripts": {
-    "start-electron": "set ELECTRON_START_URL=http://localhost:3000/ && electron .",
+    "start-electron": "set ELECTRON_START_URL=http://localhost:3000 && electron .",
     "package": "electron-builder build --win -c.extraMetadata.main=build/client.js --publish never",
     "publish": "electron-builder build --win --publish always",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "portal": "npm run & npm run start-electron"
   },
   "eslintConfig": {
     "extends": [

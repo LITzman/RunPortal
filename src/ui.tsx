@@ -1,9 +1,7 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider } from '@fluentui/react-components'
 import { customDarkTheme, customLightTheme, useThemeChange } from './theme'
-
-const ipcRenderer = (window as any).ipcRenderer
-const linksData = await ipcRenderer.invoke('get-links')
+import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
 interface LinkButtonContainerProps {
     links: {
@@ -72,10 +70,15 @@ const BottomBar: React.FC = () => {
 
 export const App: React.FC = () => {
 
-   const isDarkTheme = useThemeChange()
+    useEffect(() => {
+        refreshLinks()
+    })
+
+    const isDarkTheme = useThemeChange()
     return (
-        <FluentProvider theme={isDarkTheme ? customDarkTheme : customLightTheme}>
-            <LinkButtonContainer links={linksData.links} />
+        <FluentProvider theme={isDarkTheme ? customDarkTheme : customLightTheme}
+        onLoad={refreshLinks}>
+            <LinkButtonContainer links={linksData} />
             <BottomBar/>
         </FluentProvider>
     )

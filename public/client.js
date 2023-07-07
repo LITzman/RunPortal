@@ -2,23 +2,35 @@ const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme } = r
 const { ipcMain } = require('electron/main');
 const path = require('path')
 const url = require('url')
-const storage = require('electron-json-storage')
 const linksStorage = require('./links')
 
 // Local links settings
 const linksStorageClient = new linksStorage()
-const linksData = linksStorageClient.getLinks()
+let linksData = []
+
+const refreshLinks = () => {
+    linksData = linksStorageClient.getLinks()
+}
 
 // Give the UI the links list when it wants it
 ipcMain.handle('get-links', (event, ...args) => {
-    return linksData
+    return linksStorageClient.getLinks()
 })
 
-function getIcon() {
+const getIcon = () => {
     let icon = nativeTheme.shouldUseDarkColors ? 'dark_icon.png' : 'light_icon.png'
     return path.join(__dirname, icon)
 }
 const clearIcon = path.join(__dirname, 'clear_icon.png')
+
+// FIXME - make something that will work packaged
+const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3000"
+
+const getRoute = (route) => {
+    const url = new URL(startUrl)
+    url.pathname = route
+    return url.href
+}
 
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state
@@ -46,8 +58,10 @@ class clientWindow extends BrowserWindow {
             // Unregister the close window shortcuts
             globalShortcut.unregisterAll()
 
+            refreshLinks()
+
             // Register link shortcuts
-            linksData.links.forEach((link) => {
+            linksData.forEach((link) => {
 
                 var openLinkCallback = (() => {
                     if (this.windowShown && this.isFocused()) {
@@ -58,13 +72,16 @@ class clientWindow extends BrowserWindow {
             })
             
             // Register escape callback
-            var escapeCallback = (() => {
+            const escapeCallback = (() => {
                 this.hideWindow()
             }).bind(this)
             globalShortcut.register('esc', escapeCallback)
 
+            this.setBounds({ width: (linksData.length * 100) + 250})
+            this.reload()
             this.show()
             this.windowShown = true
+
         }
     }
 
@@ -75,51 +92,68 @@ class clientWindow extends BrowserWindow {
     }
 }
 
-function addLinkDialog() {
-    let addLinkWindow = new BrowserWindow({
+const openDialogWindow = (dialog) => {
+    let dialogWindow = new BrowserWindow({
         resizable: false,
         minimizable: false,
-        maximizable: false,
+        maximizable: false, 
         movable: true,
         closable: true,
         // For react->electron IPC
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
-
         // Window styling
+        icon: getIcon(),
         skipTaskbar: true,
         titleBarStyle: 'default',
-        title: 'Add Shortcut',
+        title: dialog + ' Shortcut',
         autoHideMenuBar: true,
         transparent: true,
-        frameless: false,
         backgroundMaterial: 'mica',
-        show: false
+        show: false,
+    })
+    dialogWindow.once('ready-to-show', () => {
+        dialogWindow.show()
     })
 
-    addLinkWindow.once('ready-to-show', () => {
-        addLinkWindow.show()
-    })
+    return dialogWindow
 }
 
-function removeLinkDialog() {
+const addLinkDialog = () => {
+    const addLinkWindow = openDialogWindow('Add')
+    
+    // Handle key add requests
+    ipcMain.on('add-link', (_, [name, path, shortcut]) => {
+        linksStorageClient.addLink(name, path, shortcut)
+    })
 
+    addLinkWindow.loadURL(getRoute('/Add'))
+}    
+
+
+function removeLinkDialog() {
+    const removeLinkWindow = openDialogWindow('Remove')
+
+    // Handle key remove requests
+    ipcMain.on('remove-link', (_, shortcut) => {
+        linksStorageClient.removeLink(shortcut)
+    })
+
+    removeLinkWindow.loadURL(getRoute('/Remove'))
 }
 
 function clientInit() {
     
-     // FIXME - make something that will work packaged
-    const startUrl = process.env.ELECTRON_START_URL
-    
-    // Get screen dimensions for window scaling
+    // Get screen dimensions for window scaling 
     const {screen} = require('electron')
     let primaryDisplay = screen.getPrimaryDisplay()
     const screenHeight = primaryDisplay.workAreaSize.height
     const screenWidth = primaryDisplay.workAreaSize.width
   
     // Scale window to the number of buttons.
-    const mainWindowWidth = (linksData.links.length * 100) + 250
+    refreshLinks()
+    const mainWindowWidth = (linksData.length * 100) + 250
     const mainWindowHeight = 240
 
     let mainWindow = new clientWindow({
@@ -134,12 +168,10 @@ function clientInit() {
         maximizable: false,
         movable: false,
         closable: false,
-
         // For react->electron IPC
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
-
         // Window styling
         icon: clearIcon,
         skipTaskbar: true,
@@ -147,7 +179,6 @@ function clientInit() {
         title: '',
         autoHideMenuBar: true,
         transparent: true,
-        frameless: false,
         backgroundMaterial: 'mica',
         show: false
     })
@@ -192,13 +223,10 @@ function clientInit() {
     app.on('window-all-closed', () => {   
         mainWindow.hideWindow()
     })
-
     mainWindow.loadURL(startUrl)
 }
 
 app.whenReady().then(clientInit)
 app.on('activate', () => {
-    if (app.getAllWindows().length === 0) {
-        clientInit()
-    }
+    clientInit()
 })

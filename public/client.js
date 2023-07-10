@@ -164,13 +164,18 @@ const modifyLinkDialog = () => {
 
     dialogOpen = true
     
-    // Handle key add requests
+    // Handle key modify requests
     ipcMain.on('modify-link', (_, [oldLink, NewLink]) => {
         linksStorageClient.modifyLink(oldLink, NewLink)
-
+        refreshLinks()
+    
         // Update everything open after we modified a link
         refreshWindows()
     })
+
+    modifyLinkWindow.updateWindow = () => {
+        refreshLinks()
+    }
 
     modifyLinkWindow.on('closed', () => {
         dialogOpen = false
@@ -190,6 +195,7 @@ const addLinkDialog = () => {
     // Handle key add requests
     ipcMain.on('add-link', (_, link) => {
         linksStorageClient.addLink(link)
+        refreshLinks()
 
         // Update everything open after we added a link
         refreshWindows()
@@ -213,7 +219,6 @@ const editDialog = () => {
         })
 
         editWindow.on('reloaded', () => {
-            editWindow.setContentBounds(editWindow.getContentBounds())
             editWindow.reload()
         })
         
@@ -227,6 +232,7 @@ const editDialog = () => {
         // Handle key remove requests
         ipcMain.on('remove-link', (_, shortcut) => {
             linksStorageClient.removeLink(shortcut)
+            refreshLinks()
             refreshWindows()
         })
 
@@ -242,8 +248,15 @@ const editDialog = () => {
             }
         })
 
+        const interval = setInterval(() => {
+            editWindow.setResizable(true)
+            editWindow.setSize( 450, (200 + linksData.length * 53))
+            editWindow.setResizable(false)
+        }, 100)
+
         editWindow.on('closed', () => {
             modifyDialogOpen = false
+            clearInterval(interval)
         })
 
         editWindow.loadURL(getRoute('/Edit'))

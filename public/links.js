@@ -1,7 +1,6 @@
 const { app } = require('electron')
 const path = require('path')
 const storage = require('electron-json-storage')
-const { error } = require('console')
 
 // Local links settings
 const userSettingsPath = path.join(app.getPath('userData'), 'linksSettings')
@@ -16,9 +15,7 @@ module.exports = class linksStorage {
         // First run
         storage.get('links', (error) => {
             if (error) {
-                storage.set('links', emptyArray, (error) => {
-                    if (error) throw error()
-                })
+                storage.setSync('links', emptyArray)
             }
         })
     }
@@ -27,26 +24,32 @@ module.exports = class linksStorage {
         return storage.getSync('links')
     }
 
-    addLink(link) {
+    addLink(newLink) {
         var links = this.getLinks()
-        links.push(link)
-        storage.set('links', links, (error) => {
-            if (error) throw error()
-        })
+        
+        if (links.some((link) => {
+            if (link.linkPath == newLink.linkPath && link.appName == newLink.appName && link.shortcutText == newLink.shortcutText) {
+                return true
+            } else {
+                return false
+            }}))
+            {
+            return
+        }
+        links.push(newLink)
+        storage.setSync('links', links)
     }
    
     removeLink(shortcut) {
         var links = this.getLinks()
-        storage.set('links', links.filter(link => link.shortcutText !== shortcut), (error) => {
-            if (error) throw error
-        })
+        storage.setSync('links', links.filter(link => link.shortcutText !== shortcut))
     }
     
     modifyLink(oldLink, newLink) {
         var links = this.getLinks()
-        storage.set('links', links.map(link => link.shortcutText !== oldLink.shortcutText ? link : newLink), (error) => {
-            if (error) throw error
-        })
-        
+        if (links.includes(newLink)) {
+            return
+        }
+        storage.setSync('links', links.map(link => link.shortcutText !== oldLink.shortcutText ? link : newLink))
     }
 }

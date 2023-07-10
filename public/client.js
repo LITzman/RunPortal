@@ -17,11 +17,43 @@ ipcMain.handle('get-links', (event, ...args) => {
     return linksStorageClient.getLinks()
 })
 
-const getIcon = () => {
+// Initially determine dark theme by electron
+let getIcon = () => {
     let icon = nativeTheme.shouldUseDarkColors ? 'dark_icon.png' : 'light_icon.png'
     return path.join(__dirname, icon)
 }
+var tray = null
+
+// Get theme updates from react
+ipcMain.on('change-theme', (_, isDark) => {
+
+    // Update icon accordingly
+    getIcon = () => { return path.join(__dirname, isDark ? 'dark_icon.png' : 'light_icon.png') }
+    BrowserWindow.getAllWindows().forEach((window) => {
+        window.setIcon(getIcon())
+    })
+    if (tray) { 
+        tray.setImage(getIcon())
+    }
+})
+
 const clearIcon = path.join(__dirname, 'clear_icon.png')
+
+const refreshWindows = () => {
+    refreshLinks()
+    BrowserWindow.getAllWindows().forEach((window) => {
+        window.reload()
+        window.emit('reloaded')
+    })
+}
+
+// Give the UI the correct link which needs to be modified
+let linkToModify = null
+let dialogOpen = false
+let modifyDialogOpen = false
+ipcMain.handle('get-link-to-modify', (event, ...args) => {
+    return linkToModify
+})
 
 // FIXME - make something that will work packaged
 const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3000"
@@ -37,6 +69,9 @@ class clientWindow extends BrowserWindow {
     constructor(options) {
         super(options)
         this.windowShown = false
+    }
+    updateWindowBounds() {
+        this.setBounds({ width: (linksData.length * 100) + 250})
     }
     hideWindow() {
         if (this.windowShown) {
@@ -77,11 +112,10 @@ class clientWindow extends BrowserWindow {
             }).bind(this)
             globalShortcut.register('esc', escapeCallback)
 
-            this.setBounds({ width: (linksData.length * 100) + 250})
-            this.reload()
+            this.updateWindowBounds()
+            this.loadURL(startUrl)
             this.show()
             this.windowShown = true
-
         }
     }
 
@@ -92,9 +126,11 @@ class clientWindow extends BrowserWindow {
     }
 }
 
-const openDialogWindow = (dialog) => {
+const openDialogWindow = (dialog, width, height) => {
     let dialogWindow = new BrowserWindow({
-        resizable: false,
+        width: width,
+        height: height,
+        resizable: true,
         minimizable: false,
         maximizable: false, 
         movable: true,
@@ -105,7 +141,7 @@ const openDialogWindow = (dialog) => {
         },
         // Window styling
         icon: getIcon(),
-        skipTaskbar: true,
+        skipTaskbar: false,
         titleBarStyle: 'default',
         title: dialog + ' Shortcut',
         autoHideMenuBar: true,
@@ -120,27 +156,99 @@ const openDialogWindow = (dialog) => {
     return dialogWindow
 }
 
-const addLinkDialog = () => {
-    const addLinkWindow = openDialogWindow('Add')
+const modifyLinkDialog = () => {
+    const modifyLinkWindow = openDialogWindow('Modify', 400, 500)
+    modifyLinkWindow.once('ready-to-show', () => {
+        modifyLinkWindow.show()
+    })
+
+    dialogOpen = true
     
     // Handle key add requests
-    ipcMain.on('add-link', (_, [name, path, shortcut]) => {
-        linksStorageClient.addLink(name, path, shortcut)
+    ipcMain.on('modify-link', (_, [oldLink, NewLink]) => {
+        linksStorageClient.modifyLink(oldLink, NewLink)
+
+        // Update everything open after we modified a link
+        refreshWindows()
+    })
+
+    modifyLinkWindow.on('closed', () => {
+        dialogOpen = false
+    })
+
+    modifyLinkWindow.loadURL(getRoute('/Modify'))
+}    
+
+const addLinkDialog = () => {
+    const addLinkWindow = openDialogWindow('Add', 400, 500)
+    addLinkWindow.once('ready-to-show', () => {
+        addLinkWindow.show()
+    })
+
+    dialogOpen = true
+
+    // Handle key add requests
+    ipcMain.on('add-link', (_, link) => {
+        linksStorageClient.addLink(link)
+
+        // Update everything open after we added a link
+        refreshWindows()
+    })
+
+    addLinkWindow.on('closed', () => {
+        dialogOpen = false
     })
 
     addLinkWindow.loadURL(getRoute('/Add'))
-}    
+}  
 
+const editDialog = () => {
+    if (!modifyDialogOpen) {
+        const editWindow = openDialogWindow('Edit', 450, (200 + linksData.length * 53))
+        modifyDialogOpen = true
 
-function removeLinkDialog() {
-    const removeLinkWindow = openDialogWindow('Remove')
+        editWindow.once('ready-to-show', () => {
+            editWindow.setContentBounds(editWindow.getContentBounds())
+            editWindow.reload()
+        })
 
-    // Handle key remove requests
-    ipcMain.on('remove-link', (_, shortcut) => {
-        linksStorageClient.removeLink(shortcut)
-    })
+        editWindow.on('reloaded', () => {
+            editWindow.setContentBounds(editWindow.getContentBounds())
+            editWindow.reload()
+        })
+        
+        // Handle key add requests
+        ipcMain.on('open-add-dialog', (_, __) => {
+            if (!dialogOpen) {
+                addLinkDialog()
+            }
+        })
 
-    removeLinkWindow.loadURL(getRoute('/Remove'))
+        // Handle key remove requests
+        ipcMain.on('remove-link', (_, shortcut) => {
+            linksStorageClient.removeLink(shortcut)
+            refreshWindows()
+        })
+
+        // Handle key modify requests
+        ipcMain.on('open-modify-dialog', (_, shortcut) => {
+
+            // Shouldn't be needed but won't work without it
+            refreshLinks()
+
+            linkToModify = linksData.filter(link => link.shortcutText === shortcut)[0]
+            if (!dialogOpen) {
+                modifyLinkDialog()
+            }
+        })
+
+        editWindow.on('closed', () => {
+            modifyDialogOpen = false
+        })
+
+        editWindow.loadURL(getRoute('/Edit'))
+    }
+    
 }
 
 function clientInit() {
@@ -168,7 +276,7 @@ function clientInit() {
         maximizable: false,
         movable: false,
         closable: false,
-        // For react->electron IPC
+        // For react<->electron IPC
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         },
@@ -184,7 +292,7 @@ function clientInit() {
     })
     
     // Tray icon!
-    var tray = new Tray(getIcon())
+    tray = new Tray(getIcon())
     tray.on('click', () => {
         if (mainWindow) {
             mainWindow.showWindow()
@@ -195,8 +303,7 @@ function clientInit() {
     // Tray Menu!
     const contextMenu = Menu.buildFromTemplate([
         {label: 'Show RunPortal', click: () => { mainWindow.showWindow() }},
-        {label: 'Add Shortcut', click: addLinkDialog},
-        {label: 'Remove Shortcut', click: removeLinkDialog},
+        {label: 'Edit Shortcuts', click: editDialog},
         {label: 'Terminate RunPortal', click: () => { app.exit(1) }},
         
     ])
@@ -223,6 +330,7 @@ function clientInit() {
     app.on('window-all-closed', () => {   
         mainWindow.hideWindow()
     })
+
     mainWindow.loadURL(startUrl)
 }
 

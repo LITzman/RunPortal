@@ -4,5 +4,5 @@ window.ipcRenderer = require('electron').ipcRenderer
 
 contextBridge.exposeInMainWorld('ipcRenderer', {
     send: (channel, data) => ipcRenderer.send(channel, data),
-    invoke: (channel) => ipcRenderer.invoke(channel),
+    invoke: (channel) => ipcRenderer.invoke(channel)
 });

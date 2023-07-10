@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider } from '@fluentui/react-components'
-import { customDarkTheme, customLightTheme, useThemeChange } from './theme'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles } from '@fluentui/react-components'
+import { customDarkTheme, customLightTheme ,useThemeChange } from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
 interface LinkButtonContainerProps {
@@ -8,15 +8,48 @@ interface LinkButtonContainerProps {
         appName: string,
         linkPath: string,
         shortcutText: string
-    }[]
+    }[],
 }
 
+const useStyles = makeStyles({
+    linkButton: {
+        marginTop: '12px',
+        marginBottom: '12px'
+    },
+    linkButtonContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: '30px',
+        textAlign: 'center',
+    },
+    linkButtonContainerButton: {
+        marginRight: '10px',
+        marginLeft: '10px',
+        marginTop: '3px'
+    },
+    linkButtonContainerText: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: '10px',
+        textAlign: 'center'
+    },
+    skeleton: {
+        marginBottom: '10px',
+        marginLeft: '10px',
+        marginRight: '10px'
+    }
+})
+
+
 const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
+    
+    const styles = useStyles()
 
     interface LinkButtonProps {
         shortcutText: string,
         appName: string,
-        linkPath: string
+        linkPath: string,
     }
     
     const LinkButton: React.FC<LinkButtonProps> = ({ shortcutText, appName, linkPath }) => {    
@@ -25,16 +58,15 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
         const clickHandler = () => {
             ipcRenderer.send("button-press", linkPath)
         }
+        
         return (
             <div>
                 <Button 
                     shape='rounded'
                     size='large'
                     appearance='subtle' // Pretty!
-                    onClick={clickHandler}
-                    
-                    >
-                    <div style={{marginTop: '12px', marginBottom: '12px'}}>
+                    onClick={clickHandler}>
+                    <div className={styles.linkButton}>
                         <LargeTitle>{shortcutText}</LargeTitle>
                     </div>
                 </Button>
@@ -43,17 +75,22 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
     }
     
     return (
-        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '20px', textAlign: 'center'}}>
+        <div className={styles.linkButtonContainer}>
             {links.map((link, index) => (
+            <td>
             <div key={link.appName}>
-                <div style={{marginRight: '20px', marginTop: '3px'}}>
+                <tr>
+                <div className={styles.linkButtonContainerButton}>
                     <LinkButton shortcutText={link.shortcutText} appName={link.appName} linkPath={link.linkPath}/>
                 </div>
-                <div style={{marginRight: '20px', marginTop: '10px'}}>
+                </tr>
+                <tr>
+                <div className={styles.linkButtonContainerText}>
                     <Body2>{link.appName}</Body2>   
                 </div>
+                </tr>
             </div>
-            
+            </td>
             ))}
         </div>
     )
@@ -61,8 +98,9 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
 
 // Just something nice to liven up the window
 const BottomBar: React.FC = () => {
+    const styles = useStyles()
     return (
-        <Skeleton appearance='opaque' style={{marginBottom: '10', marginLeft: '10', marginRight: '10'}}>
+        <Skeleton appearance='opaque' className={styles.skeleton}>
             <SkeletonItem />
         </Skeleton>
     )
@@ -78,7 +116,7 @@ export const App: React.FC = () => {
     return (
         <FluentProvider theme={isDarkTheme ? customDarkTheme : customLightTheme}
         onLoad={refreshLinks}>
-            <LinkButtonContainer links={linksData} />
+            <LinkButtonContainer links={linksData}/>
             <BottomBar/>
         </FluentProvider>
     )

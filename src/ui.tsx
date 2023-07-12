@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles } from '@fluentui/react-components'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3 } from '@fluentui/react-components'
 import { customDarkTheme, customLightTheme ,useThemeChange } from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
@@ -38,6 +38,11 @@ const useStyles = makeStyles({
         marginBottom: '10px',
         marginLeft: '10px',
         marginRight: '10px'
+    },
+    noLinksPrompt: {
+        textAlign: 'center',
+        marginTop: '50px',
+        marginBottom: '80px'
     }
 })
 
@@ -48,11 +53,10 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
 
     interface LinkButtonProps {
         shortcutText: string,
-        appName: string,
         linkPath: string,
     }
     
-    const LinkButton: React.FC<LinkButtonProps> = ({ shortcutText, appName, linkPath }) => {    
+    const LinkButton: React.FC<LinkButtonProps> = ({ shortcutText, linkPath }) => {    
 
         // To open the links on button press
         const clickHandler = () => {
@@ -74,23 +78,33 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
         )
     }
     
+    if (links.length == 0) {
+        return (
+            <div className={styles.noLinksPrompt}>
+                <Title3>
+                    To add shortcuts select go to the tray icon and selet "Edit Shortcuts"
+                </Title3>
+            </div>
+        )
+    }
+
     return (
         <div className={styles.linkButtonContainer}>
-            {links.map((link, index) => (
-            <td>
-            <div key={link.appName}>
-                <tr>
-                <div className={styles.linkButtonContainerButton}>
-                    <LinkButton shortcutText={link.shortcutText} appName={link.appName} linkPath={link.linkPath}/>
-                </div>
-                </tr>
-                <tr>
-                <div className={styles.linkButtonContainerText}>
-                    <Body2>{link.appName}</Body2>   
-                </div>
-                </tr>
-            </div>
-            </td>
+            {links.map((link, _) => (
+                <td key={'u'+link.appName}>
+                    <div>
+                        <tr>
+                            <div className={styles.linkButtonContainerButton}>
+                                <LinkButton shortcutText={link.shortcutText} linkPath={link.linkPath}/>
+                            </div>
+                        </tr>
+                        <tr>
+                            <div className={styles.linkButtonContainerText}>
+                                <Body2>{link.appName}</Body2>   
+                            </div>
+                        </tr>
+                    </div>
+                </td>
             ))}
         </div>
     )

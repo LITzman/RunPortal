@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Input, Button, FluentProvider, makeStyles, shorthands, ComboboxProps, Card, CardHeader, Menu, MenuTrigger, MenuPopover, MenuItem, CompoundButton, InputProps, Title3, Body1, Body1Strong, Divider, webDarkTheme, webLightTheme } from '@fluentui/react-components'
+import { Input, Button, FluentProvider, makeStyles, shorthands, Card, CardHeader, Menu, MenuTrigger, MenuPopover, MenuItem, CompoundButton, InputProps, Title3, Body1, Body1Strong, Divider, webDarkTheme, webLightTheme } from '@fluentui/react-components'
 import { AddSquare24Filled, MoreHorizontal20Filled } from '@fluentui/react-icons';
 import { customDarkTheme, customLightTheme, useThemeChange } from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
@@ -65,7 +65,7 @@ interface LinkDialogProps {
     }
 }
 
-export const LinkDialog: React.FC<LinkDialogProps> = ({ link }, props: Partial<ComboboxProps>) => {
+export const LinkDialog: React.FC<LinkDialogProps> = ({ link }) => {
 
     let isModify = false
     if (link.shortcutText) {
@@ -92,7 +92,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ link }, props: Partial<C
     const hiddenFileInput = React.useRef<any>()
     const [fileUploaded, setFileUploaded] = useState(link.linkPath)
     const [fileUploadedName, setFileUploadedName] = useState(link.appName)
-    const handleFileClick = (event: React.MouseEvent) => {
+    const handleFileClick = (_: React.MouseEvent) => {
         if (hiddenFileInput.current) {
             hiddenFileInput.current.click()
         }
@@ -105,11 +105,11 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ link }, props: Partial<C
         setFileUploadedName(appName.charAt(0).toUpperCase() + appName.slice(1))
     }
 
-    const handleNameChange: InputProps['onChange'] = (event, data) => {
+    const handleNameChange: InputProps['onChange'] = (_, data) => {
         setFileUploadedName(data.value)
     }
 
-    const handleHotkeyChange: InputProps['onChange'] = (event, data) => {
+    const handleHotkeyChange: InputProps['onChange'] = (_, data) => {
         if (data.value.length <= 1 && (validKeys + ' ').includes(data.value.toUpperCase()))
         {
             setHotkey(data.value.toUpperCase())
@@ -118,7 +118,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({ link }, props: Partial<C
     }
 
     // Submit button
-    const handleSubmitClick = (event: React.MouseEvent) => {
+    const handleSubmitClick = (_: React.MouseEvent) => {
         if (HotkeyValid && fileUploadedName && fileUploaded)
         {
             if (isModify) {
@@ -173,7 +173,7 @@ export const EditDialog: React.FC = () => {
         refreshLinks()
     })
 
-    const handleAddClick = (event: React.MouseEvent) => {
+    const handleAddClick = (_: React.MouseEvent) => {
         ipcRenderer.send('open-add-dialog', null)
     }
 

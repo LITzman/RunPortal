@@ -14,9 +14,6 @@
             ".",
             "--enable-logging"
         ],
-        "env": {
-            "ELECTRON_START_URL": "http://localhost:3000"
-        },
         "externalConsole": false,
         "sourceMaps": false,
         "outDir": null

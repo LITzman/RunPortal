@@ -1,6 +1,7 @@
 const { app } = require('electron')
 const path = require('path')
 const storage = require('electron-json-storage')
+const { promises, fstat } = require('fs')
 
 // Local links settings
 const userSettingsPath = path.join(app.getPath('userData'), 'linksSettings')
@@ -13,7 +14,10 @@ module.exports = class linksStorage {
         storage.setDataPath(userSettingsPath)
         
         // First run
-        storage.get('links', (error) => {
+        promises.readFile(path.join(userSettingsPath, 'links.json')).catch(() => {
+            promises.writeFile(path.join(userSettingsPath, 'links.json'), '[]')
+        })
+        storage.get('linksss', (error) => {
             if (error) {
                 storage.setSync('links', emptyArray)
             }

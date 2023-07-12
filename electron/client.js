@@ -1,15 +1,31 @@
-const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme } = require('electron')
+const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme, dialog } = require('electron')
 const { ipcMain } = require('electron/main');
 const path = require('path')
-const url = require('url')
-const linksStorage = require('./links')
+const { createFileRoute, createURLRoute } = require('electron-router-dom')
 
+const linksStorage = require('./links')
 // Local links settings
 const linksStorageClient = new linksStorage()
 let linksData = []
 
 const refreshLinks = () => {
     linksData = linksStorageClient.getLinks()
+}
+
+// Routing
+const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
+process.env.DIST = path.join(__dirname, '../dist')
+const loadRoute = (window, route) => {
+    if (VITE_DEV_SERVER_URL) {
+        window.loadURL(createURLRoute(VITE_DEV_SERVER_URL, route))
+    } else {
+        window.loadFile(...createFileRoute(path.join(process.env.DIST, 'index.html'), route))
+    }
+}
+
+process.env.PUBLIC = app.isPackaged ? process.env.DIST : path.join(process.env.DIST, '../public')
+const getAsset = (name) => {
+    return path.join(process.env.PUBLIC, name)
 }
 
 // Give the UI the links list when it wants it
@@ -19,8 +35,8 @@ ipcMain.handle('get-links', (event, ...args) => {
 
 // Initially determine dark theme by electron
 let getIcon = () => {
-    let icon = nativeTheme.shouldUseDarkColors ? 'dark_icon.png' : 'light_icon.png'
-    return path.join(__dirname, icon)
+    let icon = nativeTheme.shouldUseDarkColors ? getAsset('dark_icon.png') : getAsset('light_icon.png')
+    return icon
 }
 var tray = null
 
@@ -28,7 +44,7 @@ var tray = null
 ipcMain.on('change-theme', (_, isDark) => {
 
     // Update icon accordingly
-    getIcon = () => { return path.join(__dirname, isDark ? 'dark_icon.png' : 'light_icon.png') }
+    getIcon = () => { return isDark ? getAsset('dark_icon.png') : getAsset('light_icon.png') }
     BrowserWindow.getAllWindows().forEach((window) => {
         window.setIcon(getIcon())
     })
@@ -37,7 +53,9 @@ ipcMain.on('change-theme', (_, isDark) => {
     }
 })
 
-const clearIcon = path.join(__dirname, 'clear_icon.png')
+const clearIcon = getAsset('clear_icon.png')
+
+var screenHeight, screenWidth
 
 const refreshWindows = () => {
     refreshLinks()
@@ -55,39 +73,45 @@ ipcMain.handle('get-link-to-modify', (event, ...args) => {
     return linkToModify
 })
 
-// FIXME - make something that will work packaged
-const startUrl = process.env.ELECTRON_START_URL || "http://localhost:3000"
-
-const getRoute = (route) => {
-    const url = new URL(startUrl)
-    url.pathname = route
-    return url.href
-}
-
 class clientWindow extends BrowserWindow {
     // Wrapper class to manage window state
     constructor(options) {
         super(options)
         this.windowShown = false
+        this.registerHotkey()
     }
+
     updateWindowBounds() {
-        this.setBounds({ width: (linksData.length * 100) + 250})
+        if (linksData.length > 0) {
+            const bounds = this.getBounds()
+            this.setBounds({ 
+                x: screenWidth / 2 - bounds.width / 2,
+                y: screenHeight / 2 - bounds.height / 2 - (bounds.height / 2),
+                width: (linksData.length * 100) + 250
+            })
+        }
     }
+
+    registerHotkey() {
+        // Register the WINKEY + F combo to open the window
+        var openCallback = (() => {
+            this.showWindow()
+        }).bind(this)
+        globalShortcut.register('CommandOrControl+Alt+F', openCallback)
+    }
+
     hideWindow() {
         if (this.windowShown) {
             // Unregister the open window shortcuts
             globalShortcut.unregisterAll()
 
-            // Register the WINKEY + F combo to open the window
-            var openCallback = (() => {
-                this.showWindow()
-            }).bind(this)
-            globalShortcut.register('CommandOrControl+Alt+F', openCallback)
+            this.registerHotkey()
 
             this.hide()
             this.windowShown = false
         }
     }
+
     showWindow() {
         if (!this.windowShown) {
             // Unregister the close window shortcuts
@@ -113,7 +137,7 @@ class clientWindow extends BrowserWindow {
             globalShortcut.register('esc', escapeCallback)
 
             this.updateWindowBounds()
-            this.loadURL(startUrl)
+            loadRoute(this, 'main')
             this.show()
             this.windowShown = true
         }
@@ -181,7 +205,7 @@ const modifyLinkDialog = () => {
         dialogOpen = false
     })
 
-    modifyLinkWindow.loadURL(getRoute('/Modify'))
+    loadRoute(modifyLinkWindow, 'Modify')
 }    
 
 const addLinkDialog = () => {
@@ -205,7 +229,7 @@ const addLinkDialog = () => {
         dialogOpen = false
     })
 
-    addLinkWindow.loadURL(getRoute('/Add'))
+    loadRoute(addLinkWindow, 'Add')
 }  
 
 const editDialog = () => {
@@ -258,8 +282,7 @@ const editDialog = () => {
             modifyDialogOpen = false
             clearInterval(interval)
         })
-
-        editWindow.loadURL(getRoute('/Edit'))
+        loadRoute(editWindow, 'Edit')
     }
     
 }
@@ -269,12 +292,15 @@ function clientInit() {
     // Get screen dimensions for window scaling 
     const {screen} = require('electron')
     let primaryDisplay = screen.getPrimaryDisplay()
-    const screenHeight = primaryDisplay.workAreaSize.height
-    const screenWidth = primaryDisplay.workAreaSize.width
+    screenHeight = primaryDisplay.workAreaSize.height
+    screenWidth = primaryDisplay.workAreaSize.width
   
     // Scale window to the number of buttons.
     refreshLinks()
-    const mainWindowWidth = (linksData.length * 100) + 250
+    var mainWindowWidth = 900
+    if (linksData.length > 0) {
+        mainWindowWidth = (linksData.length * 100) + 250
+    }
     const mainWindowHeight = 240
 
     let mainWindow = new clientWindow({
@@ -344,7 +370,7 @@ function clientInit() {
         mainWindow.hideWindow()
     })
 
-    mainWindow.loadURL(startUrl)
+    loadRoute(mainWindow, 'main')
 }
 
 app.whenReady().then(clientInit)

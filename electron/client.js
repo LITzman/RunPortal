@@ -4,6 +4,11 @@ const path = require('path')
 const os = require('os')
 const { createFileRoute, createURLRoute } = require('electron-router-dom')
 
+// Limit to one app instance
+if (!app.requestSingleInstanceLock({ running: true})) {
+    app.quit
+}
+
 const linksStorage = require('./links')
 // Local links settings
 const linksStorageClient = new linksStorage()
@@ -12,6 +17,10 @@ let linksData = []
 const refreshLinks = () => {
     linksData = linksStorageClient.getLinks()
 }
+
+app.setLoginItemSettings({
+    openAtLogin: true
+})
 
 // Routing
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']

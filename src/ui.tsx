@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3, shorthands } from '@fluentui/react-components'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3 } from '@fluentui/react-components'
 import { useThemeChange, isMica, getTheme, getButtonShape} from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 

@@ -73,7 +73,7 @@ const getButtonShape= () => {
     }
 }
 
-var theme: customTheme
+let theme: customTheme
 if (isMica()) {
     theme = micaTheme
 } else {

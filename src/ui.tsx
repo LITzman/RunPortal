@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3 } from '@fluentui/react-components'
-import { customDarkTheme, customLightTheme ,useThemeChange } from './theme'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3, shorthands } from '@fluentui/react-components'
+import { useThemeChange, isMica, getTheme, getButtonShape} from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
 interface LinkButtonContainerProps {
@@ -37,7 +37,7 @@ const useStyles = makeStyles({
     skeleton: {
         marginBottom: '10px',
         marginLeft: '10px',
-        marginRight: '10px'
+        marginRight: '10px',
     },
     noLinksPrompt: {
         textAlign: 'center',
@@ -66,7 +66,7 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
         return (
             <div>
                 <Button 
-                    shape='rounded'
+                    shape={getButtonShape()}
                     size='large'
                     appearance='subtle' // Pretty!
                     onClick={clickHandler}>
@@ -114,7 +114,7 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
 const BottomBar: React.FC = () => {
     const styles = useStyles()
     return (
-        <Skeleton appearance='opaque' className={styles.skeleton}>
+        <Skeleton appearance={isMica() ? 'opaque' : 'translucent'} className={styles.skeleton}>
             <SkeletonItem />
         </Skeleton>
     )
@@ -128,7 +128,7 @@ export const App: React.FC = () => {
 
     const isDarkTheme = useThemeChange()
     return (
-        <FluentProvider theme={isDarkTheme ? customDarkTheme : customLightTheme}
+        <FluentProvider theme={isDarkTheme ? getTheme().dark : getTheme().light}
         onLoad={refreshLinks}>
             <LinkButtonContainer links={linksData}/>
             <BottomBar/>

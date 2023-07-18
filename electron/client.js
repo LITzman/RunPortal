@@ -1,6 +1,7 @@
 const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme, dialog } = require('electron')
 const { ipcMain } = require('electron/main');
 const path = require('path')
+const os = require('os')
 const { createFileRoute, createURLRoute } = require('electron-router-dom')
 
 const linksStorage = require('./links')
@@ -39,6 +40,21 @@ let getIcon = () => {
     return icon
 }
 var tray = null
+
+const materialChooser = () => {
+    // For Windows 11
+    if (Number(os.release().split('.').join('')) >= 1022000) {
+        return 'mica'
+    
+    // For Windows 10
+    } else {
+        return 'acrylic'
+    }
+}
+
+ipcMain.handle('get-material', (event, ...args) => {
+    return materialChooser()
+})
 
 // Get theme updates from react
 ipcMain.on('change-theme', (_, isDark) => {
@@ -170,7 +186,7 @@ const openDialogWindow = (dialog, width, height) => {
         title: dialog + ' Shortcut',
         autoHideMenuBar: true,
         transparent: true,
-        backgroundMaterial: 'mica',
+        backgroundMaterial: materialChooser(),
         show: false,
     })
     dialogWindow.once('ready-to-show', () => {
@@ -326,7 +342,7 @@ function clientInit() {
         title: '',
         autoHideMenuBar: true,
         transparent: true,
-        backgroundMaterial: 'mica',
+        backgroundMaterial: materialChooser(),
         show: false
     })
     

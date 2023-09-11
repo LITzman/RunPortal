@@ -1,12 +1,13 @@
-const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme, dialog } = require('electron')
+const { app, BrowserWindow, globalShortcut, shell, Menu, Tray, nativeTheme } = require('electron')
 const { ipcMain } = require('electron/main');
 const path = require('path')
 const os = require('os')
 const { createFileRoute, createURLRoute } = require('electron-router-dom')
+import { isPackaged } from 'electron-is-packaged';
 
 // Limit to one app instance
 if (!app.requestSingleInstanceLock({ running: true})) {
-    app.quit
+    app.quit()
 }
 
 const linksStorage = require('./links')
@@ -18,9 +19,14 @@ const refreshLinks = () => {
     linksData = linksStorageClient.getLinks()
 }
 
-app.setLoginItemSettings({
-    openAtLogin: true
-})
+if (isPackaged)
+{
+    app.setLoginItemSettings({
+        openAtLogin: true,
+        path: app.getPath('exe'),
+        
+    })
+}
 
 // Routing
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
@@ -201,6 +207,17 @@ const openDialogWindow = (dialog, width, height) => {
     dialogWindow.once('ready-to-show', () => {
         dialogWindow.show()
     })
+
+    // Register escape callback
+    const escapeCallback = (() => {
+        BrowserWindow.getAllWindows().forEach((window) => {
+            try {
+                window.close()
+            } catch {}
+        })
+        globalShortcut.unregister('esc', escapeCallback)
+    })
+    globalShortcut.register('esc', escapeCallback)
 
     return dialogWindow
 }

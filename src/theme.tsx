@@ -62,7 +62,9 @@ const acrylicTheme: customTheme = {
 }
 
 const isMica = () => {
-    return ipcRenderer.invoke('get-material') === 'mica'
+    return ipcRenderer.invoke('get-material').then(((result: string) => {
+        return result ===  'mica'
+    }))
 }
 
 const getButtonShape= () => {

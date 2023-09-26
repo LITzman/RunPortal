@@ -87,24 +87,18 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
             </div>
         )
     }
-
+    
     return (
         <div className={styles.linkButtonContainer}>
             {links.map((link, _) => (
-                <td key={'u'+link.appName}>
-                    <div>
-                        <tr>
-                            <div className={styles.linkButtonContainerButton}>
-                                <LinkButton shortcutText={link.shortcutText} linkPath={link.linkPath}/>
-                            </div>
-                        </tr>
-                        <tr>
-                            <div className={styles.linkButtonContainerText}>
-                                <Body2>{link.appName}</Body2>   
-                            </div>
-                        </tr>
+                <div key={'u'+link.appName}>
+                    <div className={styles.linkButtonContainerButton}>
+                        <LinkButton shortcutText={link.shortcutText} linkPath={link.linkPath}/>
                     </div>
-                </td>
+                    <div className={styles.linkButtonContainerText}>
+                        <Body2>{link.appName}</Body2>   
+                    </div>
+                </div>
             ))}
         </div>
     )

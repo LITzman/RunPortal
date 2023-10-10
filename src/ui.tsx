@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, tokens, Title3 } from '@fluentui/react-components'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3 } from '@fluentui/react-components'
 import { useThemeChange, isMica, getTheme, getButtonShape} from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
@@ -71,10 +71,6 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
             if (event.key.toUpperCase() == shortcutText) {
                 ipcRenderer.send("button-press", linkPath)
             }
-        })
-
-        document.addEventListener('keydown', (event) => {
-
         })
 
         return (

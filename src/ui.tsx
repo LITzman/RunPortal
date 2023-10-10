@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, Title3 } from '@fluentui/react-components'
+import { Button, LargeTitle, Body2, Skeleton, SkeletonItem, FluentProvider, makeStyles, tokens, Title3 } from '@fluentui/react-components'
 import { useThemeChange, isMica, getTheme, getButtonShape} from './theme'
 import { ipcRenderer, linksData, refreshLinks } from './ipc'
 
@@ -12,9 +12,10 @@ interface LinkButtonContainerProps {
 }
 
 const useStyles = makeStyles({
-    linkButton: {
-        marginTop: '12px',
-        marginBottom: '12px'
+    provider: {
+        transitioProperty: 'opacity',
+        transitionDuration: '3s',
+        transitionTimingFunction: 'ease-in-out'
     },
     linkButtonContainer: {
         display: 'flex',
@@ -22,6 +23,10 @@ const useStyles = makeStyles({
         alignItems: 'center',
         marginBottom: '30px',
         textAlign: 'center',
+    },
+    linkButton: {
+        marginTop: '12px',
+        marginBottom: '12px'
     },
     linkButtonContainerButton: {
         marginRight: '10px',
@@ -46,7 +51,6 @@ const useStyles = makeStyles({
     }
 })
 
-
 const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
     
     const styles = useStyles()
@@ -59,17 +63,27 @@ const LinkButtonContainer: React.FC<LinkButtonContainerProps> = ({ links }) => {
     const LinkButton: React.FC<LinkButtonProps> = ({ shortcutText, linkPath }) => {    
 
         // To open the links on button press
-        const clickHandler = () => {
+        const mouseClickHandler = () => {
             ipcRenderer.send("button-press", linkPath)
         }
         
+        document.addEventListener('keyup', (event) => {
+            if (event.key.toUpperCase() == shortcutText) {
+                ipcRenderer.send("button-press", linkPath)
+            }
+        })
+
+        document.addEventListener('keydown', (event) => {
+
+        })
+
         return (
             <div>
-                <Button 
+                <Button
                     shape={getButtonShape()}
                     size='large'
                     appearance='subtle' // Pretty!
-                    onClick={clickHandler}>
+                    onMouseUp={mouseClickHandler}>
                     <div className={styles.linkButton}>
                         <LargeTitle>{shortcutText}</LargeTitle>
                     </div>
@@ -119,11 +133,12 @@ export const App: React.FC = () => {
     useEffect(() => {
         refreshLinks()
     })
+    const styles = useStyles()
 
     const isDarkTheme = useThemeChange()
     return (
         <FluentProvider theme={isDarkTheme ? getTheme().dark : getTheme().light}
-        onLoad={refreshLinks}>
+        onLoad={refreshLinks} className={styles.provider}>
             <LinkButtonContainer links={linksData}/>
             <BottomBar/>
         </FluentProvider>

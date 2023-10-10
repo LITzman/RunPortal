@@ -149,17 +149,6 @@ class clientWindow extends BrowserWindow {
             globalShortcut.unregisterAll()
 
             refreshLinks()
-
-            // Register link shortcuts
-            linksData.forEach((link) => {
-
-                var openLinkCallback = (() => {
-                    if (this.windowShown && this.isFocused()) {
-                        this.executeLink(link.linkPath)
-                    }
-                }).bind(this)
-                globalShortcut.register(link.shortcutText, openLinkCallback)
-            })
             
             // Register escape callback
             const escapeCallback = (() => {

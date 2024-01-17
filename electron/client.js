@@ -116,8 +116,9 @@ class clientWindow extends BrowserWindow {
         if (linksData.length > 0) {
             const bounds = this.getBounds()
             this.setBounds({ 
-                x: screenWidth / 2 - bounds.width / 2,
-                y: screenHeight / 2 - bounds.height / 2 - (bounds.height / 2),
+                // Electron will violently rape me if it will recieve a float argument
+                x: Math.round(screenWidth / 2 - bounds.width / 2),
+                y: Math.round(screenHeight / 2 - bounds.height / 2 - (bounds.height / 2)),
                 width: (linksData.length * 100) + 250
             })
         }
@@ -323,8 +324,17 @@ function clientInit() {
     // Get screen dimensions for window scaling 
     const {screen} = require('electron')
     let primaryDisplay = screen.getPrimaryDisplay()
-    screenHeight = primaryDisplay.workAreaSize.height
-    screenWidth = primaryDisplay.workAreaSize.width
+    screenHeight, screenWidth = undefined
+
+    const updateScreenMetrics = () => {
+        primaryDisplay = screen.getPrimaryDisplay()
+        screenHeight = primaryDisplay.workAreaSize.height
+        screenWidth = primaryDisplay.workAreaSize.width
+    }
+    updateScreenMetrics()
+
+    // Apparently comupter monitors grow sometimes 
+    screen.on('display-metrics-changed', updateScreenMetrics)
   
     // Scale window to the number of buttons.
     refreshLinks()

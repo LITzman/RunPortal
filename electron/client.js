@@ -87,6 +87,11 @@ ipcMain.on('change-theme', (_, isDark) => {
 const clearIcon = getAsset('clear_icon.png')
 
 var screenHeight, screenWidth
+const updateScreenMetrics = () => {
+    primaryDisplay = screen.getPrimaryDisplay()
+    screenHeight = primaryDisplay.workAreaSize.height
+    screenWidth = primaryDisplay.workAreaSize.width
+}
 
 const refreshWindows = () => {
     refreshLinks()
@@ -146,6 +151,10 @@ class clientWindow extends BrowserWindow {
 
     showWindow() {
         if (!this.windowShown) {
+            
+            // May prevent mishaps
+            updateWindowBounds()
+
             // Unregister the close window shortcuts
             globalShortcut.unregisterAll()
 
@@ -324,13 +333,7 @@ function clientInit() {
     // Get screen dimensions for window scaling 
     const {screen} = require('electron')
     let primaryDisplay = screen.getPrimaryDisplay()
-    screenHeight, screenWidth = undefined
 
-    const updateScreenMetrics = () => {
-        primaryDisplay = screen.getPrimaryDisplay()
-        screenHeight = primaryDisplay.workAreaSize.height
-        screenWidth = primaryDisplay.workAreaSize.width
-    }
     updateScreenMetrics()
 
     // Apparently comupter monitors grow sometimes 
